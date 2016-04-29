@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">BelMetro</string>
+    <string name="title_activity_maps">Map</string>
+    <string-array name="planets_array">
+        <item>Station</item>
+        <item>Place</item>
+    </string-array>
+</resources>
