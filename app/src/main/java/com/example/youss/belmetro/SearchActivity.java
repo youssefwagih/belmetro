@@ -20,7 +20,7 @@ Button belMetroButton;
         setContentView(R.layout.activity_search);
 
         belMetroButton = (Button) findViewById(R.id.belMetroButton);
-        Spinner spinner = (Spinner) findViewById(R.id.planets_spinner);
+        Spinner spinner = (Spinner) findViewById(R.id.toGoOptions_spinner);
 
         // Create an ArrayAdapter using the string array and a default spinner layout
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,

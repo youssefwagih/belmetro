@@ -16,7 +16,7 @@
             android:hint="Your Destination"
             android:id="@+id/editText" />
         <Spinner
-            android:id="@+id/planets_spinner"
+            android:id="@+id/toGoOptions_spinner"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"/>
     </LinearLayout>
