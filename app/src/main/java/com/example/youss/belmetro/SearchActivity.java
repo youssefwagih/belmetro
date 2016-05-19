@@ -38,7 +38,7 @@ public class SearchActivity extends Activity implements AdapterView.OnItemSelect
         belMetroButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(SearchActivity.this, MapsActivity.class);
+                Intent intent = new Intent(SearchActivity.this, StatNavActivity.class);
                 startActivity(intent);
             }
         });
