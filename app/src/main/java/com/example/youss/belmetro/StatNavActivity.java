@@ -1,27 +1,19 @@
 package com.example.youss.belmetro;
 
-import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
-import android.util.Log;
 
-import com.akexorcist.googledirection.DirectionCallback;
+/*import com.akexorcist.googledirection.DirectionCallback;
 import com.akexorcist.googledirection.GoogleDirection;
 import com.akexorcist.googledirection.constant.TransportMode;
 import com.akexorcist.googledirection.model.Direction;
 import com.akexorcist.googledirection.model.Leg;
 import com.akexorcist.googledirection.model.Route;
 import com.akexorcist.googledirection.util.DirectionConverter;
-import com.google.android.gms.maps.CameraUpdate;
-import com.google.android.gms.maps.CameraUpdateFactory;
+*/
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.PolylineOptions;
-
-import java.util.ArrayList;
 
 public class StatNavActivity extends FragmentActivity implements OnMapReadyCallback {
 
@@ -30,7 +22,7 @@ public class StatNavActivity extends FragmentActivity implements OnMapReadyCallb
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_maps);
+        setContentView(R.layout.activity_dest_map);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -52,7 +44,7 @@ public class StatNavActivity extends FragmentActivity implements OnMapReadyCallb
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-
+/*
         String serverKey = "AIzaSyCFR2gn7gEg-fLQAvvC5MMylBL3DisFz8o";
         final LatLng origin = new LatLng(30.097959, 31.310031);
         LatLng destination = new LatLng(30.097719, 31.304478);
@@ -100,5 +92,6 @@ public class StatNavActivity extends FragmentActivity implements OnMapReadyCallb
                         // Do something here
                     }
                 });
+                */
     }
 }
