@@ -1,5 +1,7 @@
 package com.example.youss.belmetro;
 
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.graphics.Color;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
@@ -27,6 +29,10 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,6 +46,16 @@ public class DestMapActivity extends FragmentActivity implements OnMapReadyCallb
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dest_map);
+
+        // Using existing database
+        if ( !checkDataBase()) {
+            try {
+                copyDataBase();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -63,13 +79,26 @@ public class DestMapActivity extends FragmentActivity implements OnMapReadyCallb
                 Log.i("", "Place: " + place.getName());
                 placeMarker = mMap.addMarker(new MarkerOptions().position(place.getLatLng()).title(place.getName().toString()));
 
+                // Stations Locations
+                List<Station> stationsList = Station.listAll(Station.class);
+                List<LatLng> stationsLocations = new ArrayList<LatLng>();
+
+                for (Station station : stationsList ) {
+                    mMap.addMarker(new MarkerOptions().position(new LatLng(station.lat, station.lng)).title(station.title));
+                    stationsLocations.add(new LatLng(station.lat, station.lng));
+                }
+
+                mMap.addPolyline((new PolylineOptions()).addAll(stationsLocations)
+                        .width(6).color(Color.BLUE)
+                        .visible(true));
+
                 // Get Nearest Station from user location
                 LatLng currentLocation = new LatLng(30.097987, 31.310127);
-                LatLng nearestStationForUser = GetNearestStationFromGivenPlace(currentLocation);
+                LatLng nearestStationForUser = GetNearestStationFromGivenPlace(currentLocation, stationsList);
                 DrawNavPathfromFinalStationToDest(nearestStationForUser, currentLocation, mMap);
 
                 // Get Nearest Station from destination place
-                LatLng nearestStationForPlace = GetNearestStationFromGivenPlace(place.getLatLng());
+                LatLng nearestStationForPlace = GetNearestStationFromGivenPlace(place.getLatLng(), stationsList);
                 DrawNavPathfromFinalStationToDest(nearestStationForPlace, place.getLatLng(), mMap);
 
 
@@ -102,27 +131,21 @@ public class DestMapActivity extends FragmentActivity implements OnMapReadyCallb
         mMap = googleMap;
 
         // Stations Locations
-        LatLng sarayobba = new LatLng(30.097705, 31.304484);
-        LatLng hamamatobba = new LatLng(30.091263, 31.298905);
-        LatLng kobriobba = new LatLng(30.087230, 31.294136);
+        List<Station> stationsList = Station.listAll(Station.class);
+        List<LatLng> stationsLocations = new ArrayList<LatLng>();
 
-        ArrayList<LatLng> stationsList = new ArrayList<LatLng>();
-        stationsList.add(sarayobba);
-        stationsList.add(hamamatobba);
-        stationsList.add(kobriobba);
+        for (Station station : stationsList ) {
+            mMap.addMarker(new MarkerOptions().position(new LatLng(station.lat, station.lng)).title(station.title));
+            stationsLocations.add(new LatLng(station.lat, station.lng));
+        }
 
-
-        mMap.addMarker(new MarkerOptions().position(sarayobba).title("sarayobba"));
-        mMap.addMarker(new MarkerOptions().position(hamamatobba).title("hamamatobba"));
-        mMap.addMarker(new MarkerOptions().position(kobriobba).title("kobriobba"));
-
-        mMap.addPolyline((new PolylineOptions())
-                .add(sarayobba, hamamatobba, kobriobba).width(6).color(Color.BLUE)
+        mMap.addPolyline((new PolylineOptions()).addAll(stationsLocations)
+                .width(6).color(Color.BLUE)
                 .visible(true));
 
         // Get current location
         LatLng currentLocation = new LatLng(30.097987, 31.310127);
-        LatLng nearestStation = GetNearestStationFromGivenPlace(currentLocation);
+        LatLng nearestStation = GetNearestStationFromGivenPlace(currentLocation, stationsList);
         DrawNavPathfromFinalStationToDest(nearestStation, currentLocation, mMap);
         CameraUpdate update = CameraUpdateFactory.newLatLngZoom(currentLocation, 12);
         mMap.animateCamera(update);
@@ -158,25 +181,22 @@ public class DestMapActivity extends FragmentActivity implements OnMapReadyCallb
 
     }
 
-    public LatLng GetNearestStationFromGivenPlace(LatLng givenPlace){
-        // Stations Locations
-        LatLng sarayobba = new LatLng(30.097705, 31.304484);
-        LatLng hamamatobba = new LatLng(30.091263, 31.298905);
-        LatLng kobriobba = new LatLng(30.087230, 31.294136);
+    public LatLng GetNearestStationFromGivenPlace(LatLng givenPlace, List<Station> stationsList){
+        List<LatLng> stationsLocations = new ArrayList<LatLng>();
 
-        ArrayList<LatLng> stationsList = new ArrayList<LatLng>();
-        stationsList.add(sarayobba);
-        stationsList.add(hamamatobba);
-        stationsList.add(kobriobba);
+        for (Station station : stationsList ) {
+            mMap.addMarker(new MarkerOptions().position(new LatLng(station.lat, station.lng)).title(station.title));
+            stationsLocations.add(new LatLng(station.lat, station.lng));
+        }
 
-        mMap.addMarker(new MarkerOptions().position(sarayobba).title("sarayobba"));
-        mMap.addMarker(new MarkerOptions().position(hamamatobba).title("hamamatobba"));
-        mMap.addMarker(new MarkerOptions().position(kobriobba).title("kobriobba"));
+        mMap.addPolyline((new PolylineOptions()).addAll(stationsLocations)
+                .width(6).color(Color.BLUE)
+                .visible(true));
 
         LatLng nearestStation = null;
         double nearestDistance = 10000000000000.0;
 
-        for (LatLng currentStationLocation : stationsList){
+        for (LatLng currentStationLocation : stationsLocations){
             double userStationDistance = Helpers.CalculationByDistance(givenPlace, currentStationLocation);
             if (userStationDistance < nearestDistance){
                 nearestDistance = userStationDistance;
@@ -186,5 +206,53 @@ public class DestMapActivity extends FragmentActivity implements OnMapReadyCallb
 
         return nearestStation;
     }
+
+    protected void copyDataBase() throws IOException {
+
+        //Open your local db as the input stream
+        InputStream myInput = getApplicationContext().getAssets().open("belmetro.db");
+
+        // Path to the just created empty db
+        String outFileName = "/data/data/com.example.youss.belmetro/databases/" + "belmetro.db";
+
+        //Open the empty db as the output stream
+        OutputStream myOutput = new FileOutputStream(outFileName);
+
+        //transfer bytes from the inputfile to the outputfile
+        byte[] buffer = new byte[1024];
+        int length;
+        while ((length = myInput.read(buffer))>0){
+            myOutput.write(buffer, 0, length);
+        }
+
+        //Close the streams
+        myOutput.flush();
+        myOutput.close();
+        myInput.close();
+
+    }
+
+    protected boolean checkDataBase(){
+
+        SQLiteDatabase checkDB = null;
+
+        try{
+            String myPath = "/data/data/com.example.youss.belmetro/databases/" + "belmetro.db";
+            checkDB = SQLiteDatabase.openDatabase(myPath, null, SQLiteDatabase.OPEN_READONLY);
+        }catch(SQLiteException e){
+
+            //database does't exist yet.
+
+        }
+
+        if(checkDB != null){
+            checkDB.close();
+        }
+
+        return checkDB != null ? true : false;
+    }
+
+
+
 
 }
