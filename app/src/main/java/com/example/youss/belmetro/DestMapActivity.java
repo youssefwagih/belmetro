@@ -34,7 +34,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
+import java.util.Stack;
+import java.util.concurrent.ArrayBlockingQueue;
 
 public class DestMapActivity extends FragmentActivity implements OnMapReadyCallback {
 
@@ -48,7 +52,7 @@ public class DestMapActivity extends FragmentActivity implements OnMapReadyCallb
         setContentView(R.layout.activity_dest_map);
 
         // Using existing database
-        if ( !checkDataBase()) {
+        if ( /*!checkDataBase()*/true) {
             try {
                 copyDataBase();
             } catch (IOException e) {
@@ -84,28 +88,27 @@ public class DestMapActivity extends FragmentActivity implements OnMapReadyCallb
                 List<LatLng> stationsLocations = new ArrayList<LatLng>();
 
                 for (Station station : stationsList ) {
-                    mMap.addMarker(new MarkerOptions().position(new LatLng(station.lat, station.lng)).title(station.title));
+                    //mMap.addMarker(new MarkerOptions().position(new LatLng(station.lat, station.lng)).title(station.title));
                     stationsLocations.add(new LatLng(station.lat, station.lng));
                 }
-
+                /*
                 mMap.addPolyline((new PolylineOptions()).addAll(stationsLocations)
-                        .width(6).color(Color.BLUE)
-                        .visible(true));
+                        .width(5).color(Color.BLUE)
+                        .visible(true));*/
 
                 // Get Nearest Station from user location
                 LatLng currentLocation = new LatLng(30.097987, 31.310127);
-                LatLng nearestStationForUser = GetNearestStationFromGivenPlace(currentLocation, stationsList);
-                DrawNavPathfromFinalStationToDest(nearestStationForUser, currentLocation, mMap);
+                Station nearestStationForUser = GetNearestStationFromGivenPlace(currentLocation, stationsList);
+                DrawNavPathfromFinalStationToDest(new LatLng(nearestStationForUser.lat, nearestStationForUser.lng), currentLocation, mMap);
 
                 // Get Nearest Station from destination place
-                LatLng nearestStationForPlace = GetNearestStationFromGivenPlace(place.getLatLng(), stationsList);
-                DrawNavPathfromFinalStationToDest(nearestStationForPlace, place.getLatLng(), mMap);
+                Station nearestStationForPlace = GetNearestStationFromGivenPlace(place.getLatLng(), stationsList);
+                DrawNavPathfromFinalStationToDest(new LatLng(nearestStationForPlace.lat, nearestStationForPlace.lng), place.getLatLng(), mMap);
 
+                // Get Stations Path based on selected Place
+                DrawStationsPath(nearestStationForUser, nearestStationForPlace);
 
-
-
-
-                CameraUpdate update = CameraUpdateFactory.newLatLngZoom(nearestStationForUser, 12);
+                CameraUpdate update = CameraUpdateFactory.newLatLngZoom(currentLocation, 12);
                 mMap.animateCamera(update);
             }
 
@@ -116,16 +119,6 @@ public class DestMapActivity extends FragmentActivity implements OnMapReadyCallb
             }
         });
     }
-
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
@@ -135,18 +128,18 @@ public class DestMapActivity extends FragmentActivity implements OnMapReadyCallb
         List<LatLng> stationsLocations = new ArrayList<LatLng>();
 
         for (Station station : stationsList ) {
-            mMap.addMarker(new MarkerOptions().position(new LatLng(station.lat, station.lng)).title(station.title));
+            //mMap.addMarker(new MarkerOptions().position(new LatLng(station.lat, station.lng)).title(station.title));
             stationsLocations.add(new LatLng(station.lat, station.lng));
         }
 
-        mMap.addPolyline((new PolylineOptions()).addAll(stationsLocations)
-                .width(6).color(Color.BLUE)
-                .visible(true));
+/*        mMap.addPolyline((new PolylineOptions()).addAll(stationsLocations)
+                .width(5).color(Color.BLUE)
+                .visible(true));*/
 
         // Get current location
         LatLng currentLocation = new LatLng(30.097987, 31.310127);
-        LatLng nearestStation = GetNearestStationFromGivenPlace(currentLocation, stationsList);
-        DrawNavPathfromFinalStationToDest(nearestStation, currentLocation, mMap);
+        Station nearestStation = GetNearestStationFromGivenPlace(currentLocation, stationsList);
+        DrawNavPathfromFinalStationToDest(new LatLng(nearestStation.lat, nearestStation.lng), currentLocation, mMap);
         CameraUpdate update = CameraUpdateFactory.newLatLngZoom(currentLocation, 12);
         mMap.animateCamera(update);
 
@@ -181,30 +174,119 @@ public class DestMapActivity extends FragmentActivity implements OnMapReadyCallb
 
     }
 
-    public LatLng GetNearestStationFromGivenPlace(LatLng givenPlace, List<Station> stationsList){
+    public Station GetNearestStationFromGivenPlace(LatLng givenPlace, List<Station> stationsList){
         List<LatLng> stationsLocations = new ArrayList<LatLng>();
 
         for (Station station : stationsList ) {
+            //mMap.addMarker(new MarkerOptions().position(new LatLng(station.lat, station.lng)).title(station.title));
+            stationsLocations.add(new LatLng(station.lat, station.lng));
+        }
+
+/*        mMap.addPolyline((new PolylineOptions()).addAll(stationsLocations)
+                .width(5).color(Color.BLUE)
+                .visible(true));*/
+
+        LatLng nearestStation = null;
+        double nearestDistance = 10000000000000.0;
+        int index = -1;
+        int nearestStationIndex = 0;
+        for (LatLng currentStationLocation : stationsLocations){
+            index++;
+            double userStationDistance = Helpers.CalculationByDistance(givenPlace, currentStationLocation);
+            if (userStationDistance < nearestDistance){
+                nearestDistance = userStationDistance;
+                nearestStation = currentStationLocation;
+                nearestStationIndex = index;
+            }
+        }
+        return stationsList.get(nearestStationIndex);
+    }
+
+    public void DrawStationsPath(Station startStation, Station finalStation){
+        // Get Stations Path
+        List<Station> stationsPath = GetStationsPath(startStation, finalStation);
+        List<LatLng> stationsLocations = new ArrayList<LatLng>();
+
+        for (Station station : stationsPath ) {
             mMap.addMarker(new MarkerOptions().position(new LatLng(station.lat, station.lng)).title(station.title));
             stationsLocations.add(new LatLng(station.lat, station.lng));
         }
 
         mMap.addPolyline((new PolylineOptions()).addAll(stationsLocations)
-                .width(6).color(Color.BLUE)
+                .width(5).color(Color.YELLOW)
                 .visible(true));
+    }
 
-        LatLng nearestStation = null;
-        double nearestDistance = 10000000000000.0;
+    private List<Station> GetStationsPath(Station currentStation, Station finalStation){
+        List<Station> stationsPath = new ArrayList<Station>();
+        Queue<StationNode> stationNodesQueue = new LinkedList<StationNode>();
+        StationNode currentNode = new StationNode(currentStation);
+        List<StationNode> visitedStationNodes = new ArrayList<StationNode>();
 
-        for (LatLng currentStationLocation : stationsLocations){
-            double userStationDistance = Helpers.CalculationByDistance(givenPlace, currentStationLocation);
-            if (userStationDistance < nearestDistance){
-                nearestDistance = userStationDistance;
-                nearestStation = currentStationLocation;
+        currentNode.rootStations.add(currentNode);
+        stationNodesQueue.add(currentNode);
+
+        while(!stationNodesQueue.isEmpty()){
+            // remove from queue the station
+            currentNode = (StationNode) stationNodesQueue.poll();
+            List<StationNode> stationNodesLinks = new ArrayList<StationNode>();
+
+            // Check if current station is the final station
+            if (currentNode.station.getId() == finalStation.getId()){
+                currentNode.addRootStation(currentNode);
+                break;
+            }
+
+            // Check if it has been visited before
+            if(!IsVisited(currentNode, visitedStationNodes)) {
+                // Get links of current station
+                List<Station> stationLinks = GetStationLinksByStationID(currentNode.station.getId());
+                // Convert station links to nodes and put them with root path
+                for (Station currentStationLink : stationLinks) {
+                    Log.i("Station Links", "station :" + currentNode.station.title + "," + "Link : " + currentStationLink.title);
+                    StationNode tempNode = new StationNode(currentStationLink);
+                    tempNode.rootStations.addAll(currentNode.rootStations);
+                    tempNode.rootStations.add(currentNode);
+                    stationNodesLinks.add(tempNode);
+                }
+                // Enqueue the current station child nodes
+                stationNodesQueue.addAll(stationNodesLinks);
+                // add current node as visited node in visited nodes array
+                visitedStationNodes.add(currentNode);
             }
         }
+        // Convert nodes to stations
+        for (StationNode currentStationNode : currentNode.rootStations) {
+            stationsPath.add(currentStationNode.station);
+        }
+        return stationsPath;
+    }
 
-        return nearestStation;
+    protected  boolean IsVisited(StationNode stationNode, List<StationNode> visitedStationNodes){
+        boolean IsVisited = false;
+        for (StationNode currentStationNode : visitedStationNodes) {
+            if (currentStationNode.station.getId() == stationNode.station.getId()){
+                IsVisited = true;
+                break;
+            }
+        }
+        return IsVisited;
+    }
+
+    protected  List<Station> GetStationLinksByStationID(Long stationID){
+        List<Station> stationLinks = Station.findWithQuery(Station.class, "select links.* from Station s\n" +
+                                                                        "inner join Station_Link sl on s.ID = sl.Station_ID\n" +
+                                                                        "inner join Station links on links.ID = sl.Link_ID\n" +
+                                                                        "where s.ID = ?", stationID.toString());;
+        return stationLinks;
+    }
+
+    protected  List<Station> GetStationLinksExludePreviousByStationID(Long stationID, Long previousStationID){
+        List<Station> stationLinks = Station.findWithQuery(Station.class, "select links.* from Station s\n" +
+                                                                        "inner join Station_Link sl on s.ID = sl.Station_ID\n" +
+                                                                        "inner join Station links on links.ID = sl.Link_ID\n" +
+                                                                        "where s.ID = ? and sl.Link_ID  <> ?", stationID.toString(), previousStationID.toString());;
+        return stationLinks;
     }
 
     protected void copyDataBase() throws IOException {
@@ -240,8 +322,8 @@ public class DestMapActivity extends FragmentActivity implements OnMapReadyCallb
             String myPath = "/data/data/com.example.youss.belmetro/databases/" + "belmetro.db";
             checkDB = SQLiteDatabase.openDatabase(myPath, null, SQLiteDatabase.OPEN_READONLY);
         }catch(SQLiteException e){
-
             //database does't exist yet.
+            Log.e("Database", "database not found: " + e.getMessage() );
 
         }
 
